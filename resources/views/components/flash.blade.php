@@ -1,0 +1,3 @@
+@if (session('ok')) <div class="rounded-xl bg-green-100 px-4 py-3 text-sm text-green-900">{{ session('ok') }}</div> @endif
+@if (session('err')) <div class="rounded-xl bg-red-100 px-4 py-3 text-sm text-red-900">{{ session('err') }}</div> @endif
+@if ($errors->any()) <div class="rounded-xl bg-red-100 px-4 py-3 text-sm text-red-900">@foreach ($errors->all() as $e)<div>{{ $e }}</div>@endforeach</div> @endif
