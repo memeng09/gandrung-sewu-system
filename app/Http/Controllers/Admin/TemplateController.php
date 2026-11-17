@@ -4,26 +4,48 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SertifikatTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TemplateController extends Controller {
     public function edit() {
-        return view('admin.template', ['tpl' => SertifikatTemplate::first() ?? new SertifikatTemplate([
-            'nama_y' => 48, 'nama_size' => 42, 'info_y' => 62, 'nomor_y' => 88, 'warna' => '#5E1220',
-        ])]);
+        return view('admin.template', ['tpl' => SertifikatTemplate::first() ?? new SertifikatTemplate()]);
     }
 
     public function simpan(Request $r) {
-        $d = $r->validate([
-            'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
-            'nama_y' => 'required|numeric|between:0,100', 'nama_size' => 'required|integer|between:12,120',
-            'info_y' => 'required|numeric|between:0,100', 'nomor_y' => 'required|numeric|between:0,100',
-            'warna' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        $r->validate([
+            'gambar'    => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+            'orientasi' => 'required|in:landscape,portrait',
+            'elemen'    => 'required|json',
         ]);
-        if ($r->hasFile('gambar')) $d['gambar'] = $r->file('gambar')->store('sertifikat', 'public');
-        else unset($d['gambar']);
+
+        $elemen = json_decode($r->elemen, true);
+        validator(['elemen' => $elemen], [
+            'elemen'          => 'required|array|min:1|max:30',
+            'elemen.*.teks'   => 'nullable|string|max:600',
+            'elemen.*.x'      => 'required|numeric|between:0,100',
+            'elemen.*.y'      => 'required|numeric|between:0,100',
+            'elemen.*.w'      => 'required|numeric|between:1,100',
+            'elemen.*.ukuran' => 'required|numeric|between:6,150',
+            'elemen.*.font'   => ['required', Rule::in(SertifikatTemplate::daftarFont())],
+            'elemen.*.tebal'  => 'boolean',
+            'elemen.*.miring' => 'boolean',
+            'elemen.*.rata'   => 'required|in:left,center,right',
+            'elemen.*.warna'  => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        ])->validate();
+
+        // simpan hanya kolom yang dikenal
+        $bersih = collect($elemen)->map(fn ($e) => [
+            'teks' => (string) ($e['teks'] ?? ''), 'x' => (float) $e['x'], 'y' => (float) $e['y'], 'w' => (float) $e['w'],
+            'ukuran' => (float) $e['ukuran'], 'font' => $e['font'], 'tebal' => (bool) $e['tebal'],
+            'miring' => (bool) $e['miring'], 'rata' => $e['rata'], 'warna' => $e['warna'],
+        ])->values()->all();
 
         $tpl = SertifikatTemplate::first() ?? new SertifikatTemplate();
-        $tpl->fill($d)->save();
+        $tpl->orientasi = $r->orientasi;
+        $tpl->elemen = $bersih;
+        if ($r->hasFile('gambar')) $tpl->gambar = $r->file('gambar')->store('sertifikat', 'public');
+        $tpl->save();
+
         return back()->with('ok', 'Template sertifikat disimpan.');
     }
 }
