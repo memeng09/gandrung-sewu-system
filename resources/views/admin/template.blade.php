@@ -1,27 +1,142 @@
-<x-panel title="Template sertifikat">
-  <p class="text-sm text-[#6B5A50]">Unggah desain sertifikat kosong (landscape). Nama, kecamatan, dan nomor terisi otomatis dari data penari.</p>
-  <form method="post" action="{{ route('admin.template.simpan') }}" enctype="multipart/form-data"
-    x-data="{nama:{{ old('nama_y', $tpl->nama_y) }}, size:{{ old('nama_size', $tpl->nama_size) }}, info:{{ old('info_y', $tpl->info_y) }}, nomor:{{ old('nomor_y', $tpl->nomor_y) }}, warna:'{{ old('warna', $tpl->warna) }}', src:'{{ $tpl->gambar ? asset('storage/' . $tpl->gambar) : '' }}'}"
-    class="grid gap-5 lg:grid-cols-[1fr_320px]">@csrf
-    <div class="box">
-      <div class="relative w-full overflow-hidden rounded border border-[#EADFCB] bg-[#F5EFE2]" style="aspect-ratio:297/210;container-type:inline-size">
-        <img x-show="src" :src="src" alt="" class="absolute inset-0 h-full w-full object-cover">
-        <div class="absolute inset-x-0 text-center font-serif" :style="`top:${nama}%;font-size:${size/8.41}cqw;color:${warna}`">Nama Penari</div>
-        <div class="absolute inset-x-0 text-center" :style="`top:${info}%;font-size:1.67cqw`">Kecamatan Kabat</div>
-        <div class="absolute inset-x-0 text-center" :style="`top:${nomor}%;font-size:1.3cqw`">No. GS26/0001/2026</div>
+<x-panel title="Template Sertifikat" sub="Unggah desain latar tanpa teks, lalu susun teksnya. Geser kotak teks langsung di pratinjau.">
+@php
+  $fontCustom = \App\Models\SertifikatTemplate::fontCustom();
+  $data = [
+    'orientasi' => old('orientasi', $tpl->orientasi ?? 'landscape'),
+    'elemen'    => $tpl->elemenAktif(),
+    'src'       => $tpl->gambar ? asset('storage/' . $tpl->gambar) : '',
+    'fonts'     => \App\Models\SertifikatTemplate::daftarFont(),
+  ];
+@endphp
+<style>
+@foreach ($fontCustom as $f)
+@@font-face{font-family:'{{ $f }}';src:url('{{ asset('fonts/sertifikat/' . $f . '.ttf') }}') format('truetype');}
+@endforeach
+</style>
+<script>
+function editorSertifikat(d) {
+  return {
+    orientasi: d.orientasi, elemen: d.elemen, src: d.src, fonts: d.fonts, pilih: 0, drag: null,
+    chips: ['{nama}', '{kecamatan}', '{sanggar}', '{tanggal_lahir}', '{nomor}', '{tanggal}'],
+    get W() { return this.orientasi === 'landscape' ? 841.89 : 595.28; },
+    get el() { return this.elemen[this.pilih]; },
+    klem(v, a, b) { return Math.round(Math.min(b, Math.max(a, v)) * 10) / 10; },
+    tambah() {
+      this.elemen.push({ teks: 'Teks baru', x: 10, y: 50, w: 80, ukuran: 16, font: 'Times', tebal: false, miring: false, rata: 'center', warna: '#2A1A14' });
+      this.pilih = this.elemen.length - 1;
+    },
+    duplikat() {
+      const c = JSON.parse(JSON.stringify(this.el)); c.y = this.klem(c.y + 5, 0, 98);
+      this.elemen.push(c); this.pilih = this.elemen.length - 1;
+    },
+    hapus() {
+      if (this.elemen.length < 2) return;
+      this.elemen.splice(this.pilih, 1); this.pilih = Math.max(0, this.pilih - 1);
+    },
+    sisip(t) { this.el.teks += t; },
+    mulai(e, i) {
+      this.pilih = i;
+      const r = this.$refs.kanvas.getBoundingClientRect(), el = this.elemen[i];
+      this.drag = { i, dx: (e.clientX - r.left) / r.width * 100 - el.x, dy: (e.clientY - r.top) / r.height * 100 - el.y };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    geser(e) {
+      if (!this.drag) return;
+      const r = this.$refs.kanvas.getBoundingClientRect(), el = this.elemen[this.drag.i];
+      el.x = this.klem((e.clientX - r.left) / r.width * 100 - this.drag.dx, 0, 100 - el.w);
+      el.y = this.klem((e.clientY - r.top) / r.height * 100 - this.drag.dy, 0, 98);
+    },
+    lepas() { this.drag = null; },
+    fontCss(f) {
+      return ({ 'Times': '"Times New Roman",Times,serif', 'Helvetica': 'Helvetica,Arial,sans-serif',
+        'DejaVu Serif': '"DejaVu Serif",Georgia,serif', 'DejaVu Sans': '"DejaVu Sans",Verdana,sans-serif' })[f] || ('"' + f + '",cursive');
+    },
+    contoh(t) {
+      return (t || '').replaceAll('{nama}', 'Ayu Lestari').replaceAll('{kecamatan}', 'Kabat').replaceAll('{sanggar}', 'Sanggar Sritanjung')
+        .replaceAll('{tanggal_lahir}', '14 Maret 2008').replaceAll('{nomor}', 'GS26/0001/2026')
+        .replaceAll('{tanggal}', new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }));
+    },
+  };
+}
+</script>
+
+<form method="post" action="{{ route('admin.template.simpan') }}" enctype="multipart/form-data"
+      x-data="editorSertifikat(@js($data))" @submit="$refs.json.value = JSON.stringify(elemen)"
+      class="grid gap-5 lg:grid-cols-[1fr_360px]">@csrf
+  <input type="hidden" name="elemen" x-ref="json">
+
+  <div class="box">
+    <div :class="orientasi === 'portrait' ? 'mx-auto max-w-md' : ''">
+      <div x-ref="kanvas" class="relative w-full select-none overflow-hidden rounded border border-[#F0E2D0] bg-white"
+           :style="{ aspectRatio: orientasi === 'landscape' ? '297/210' : '210/297', containerType: 'inline-size' }">
+        <img x-show="src" :src="src" alt="" class="pointer-events-none absolute inset-0 h-full w-full object-cover">
+        <template x-for="(e, i) in elemen" :key="i">
+          <div class="absolute cursor-move touch-none"
+               :class="pilih === i ? 'ring-2 ring-[#8B1E2D]' : 'hover:ring-1 hover:ring-[#C9962B]'"
+               :style="{ left: e.x + '%', top: e.y + '%', width: e.w + '%', fontSize: (e.ukuran / W * 100) + 'cqw',
+                         fontFamily: fontCss(e.font), fontWeight: e.tebal ? 700 : 400, fontStyle: e.miring ? 'italic' : 'normal',
+                         textAlign: e.rata, color: e.warna, lineHeight: 1.25, whiteSpace: 'pre-line' }"
+               @pointerdown="mulai($event, i)" @pointermove="geser($event)" @pointerup="lepas()" x-text="contoh(e.teks)"></div>
+        </template>
       </div>
-      <p class="mt-2 text-xs text-[#6B5A50]">Pratinjau posisi teks. Sertifikat PDF memakai posisi yang sama.</p>
     </div>
+    <p class="mt-2 text-xs text-[#6B5A50]">Pratinjau memakai data contoh. Klik kotak teks untuk memilih, geser untuk memindahkan.</p>
+  </div>
+
+  <div class="space-y-4">
     <div class="box space-y-3">
-      <div><label class="lbl" for="gambar">Desain sertifikat (JPG/PNG)</label>
+      <div><label class="lbl" for="gambar">Desain latar (JPG/PNG, tanpa teks)</label>
         <input id="gambar" type="file" name="gambar" accept="image/png,image/jpeg" class="text-sm"
-          @change="if($event.target.files[0]) src = URL.createObjectURL($event.target.files[0])"></div>
-      <div><label class="lbl">Posisi nama (% dari atas): <span x-text="nama"></span></label><input type="range" min="0" max="100" step="0.5" name="nama_y" x-model="nama" class="w-full"></div>
-      <div><label class="lbl">Ukuran font nama (pt)</label><input class="inp" type="number" min="12" max="120" name="nama_size" x-model="size"></div>
-      <div><label class="lbl">Posisi kecamatan (%): <span x-text="info"></span></label><input type="range" min="0" max="100" step="0.5" name="info_y" x-model="info" class="w-full"></div>
-      <div><label class="lbl">Posisi nomor (%): <span x-text="nomor"></span></label><input type="range" min="0" max="100" step="0.5" name="nomor_y" x-model="nomor" class="w-full"></div>
-      <div><label class="lbl" for="warna">Warna nama</label><input id="warna" type="color" name="warna" x-model="warna" class="h-11 w-full rounded-lg border border-[#CDBFA6]"></div>
-      <button class="btn w-full">Simpan template</button>
+               @change="if ($event.target.files[0]) src = URL.createObjectURL($event.target.files[0])"></div>
+      <div><label class="lbl" for="orientasi">Orientasi kertas A4</label>
+        <select id="orientasi" name="orientasi" x-model="orientasi" class="inp">
+          <option value="landscape">Landscape (melebar)</option><option value="portrait">Portrait (tegak)</option></select></div>
     </div>
-  </form>
+
+    <div class="box space-y-3">
+      <div class="flex items-center justify-between"><h2 class="font-semibold">Kotak teks</h2>
+        <button type="button" @click="tambah()" class="btn btn-s">Tambah teks</button></div>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="(e, i) in elemen" :key="i">
+          <button type="button" @click="pilih = i" class="max-w-[160px] truncate rounded-lg border px-3 py-1.5 text-xs"
+                  :class="pilih === i ? 'border-[#8B1E2D] bg-[#8B1E2D] text-white' : 'border-[#E5D5C0] bg-white'"
+                  x-text="(e.teks || '(kosong)').split('\n')[0]"></button>
+        </template>
+      </div>
+    </div>
+
+    <template x-if="el">
+      <div class="box space-y-3">
+        <div><label class="lbl">Isi teks</label><textarea x-model="el.teks" rows="3" class="inp !h-auto py-2"></textarea>
+          <div class="mt-2 flex flex-wrap gap-1.5">
+            <template x-for="c in chips" :key="c">
+              <button type="button" @click="sisip(c)" class="rounded-md bg-[#8B1E2D]/10 px-2 py-1 text-xs font-semibold text-[#8B1E2D]" x-text="c"></button>
+            </template></div>
+          <p class="mt-1 text-xs text-[#6B5A50]">Klik penanda untuk menyisipkannya. Isinya diganti otomatis dengan data penari.</p></div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="col-span-2"><label class="lbl">Font</label>
+            <select x-model="el.font" class="inp"><template x-for="f in fonts" :key="f"><option :value="f" x-text="f"></option></template></select></div>
+          <div><label class="lbl">Ukuran (pt)</label><input type="number" min="6" max="150" step="1" x-model.number="el.ukuran" class="inp"></div>
+          <div><label class="lbl">Lebar kotak (%)</label><input type="number" min="1" max="100" step="1" x-model.number="el.w" class="inp"></div>
+          <div><label class="lbl">Rata teks</label>
+            <select x-model="el.rata" class="inp"><option value="left">Kiri</option><option value="center">Tengah</option><option value="right">Kanan</option></select></div>
+          <div><label class="lbl">Warna</label><input type="color" x-model="el.warna" class="h-11 w-full rounded-xl border border-[#E5D5C0]"></div>
+          <div><label class="lbl">Posisi X (%)</label><input type="number" min="0" max="100" step="0.5" x-model.number="el.x" class="inp"></div>
+          <div><label class="lbl">Posisi Y (%)</label><input type="number" min="0" max="100" step="0.5" x-model.number="el.y" class="inp"></div>
+        </div>
+        <div class="flex gap-5 text-sm">
+          <label class="flex items-center gap-2"><input type="checkbox" x-model="el.tebal" class="rounded border-[#CDBFA6] text-[#8B1E2D]"> Tebal</label>
+          <label class="flex items-center gap-2"><input type="checkbox" x-model="el.miring" class="rounded border-[#CDBFA6] text-[#8B1E2D]"> Miring</label>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" @click="duplikat()" class="btn-o btn-s">Duplikat</button>
+          <button type="button" @click="hapus()" class="btn-o btn-s" :disabled="elemen.length < 2">Hapus kotak ini</button>
+        </div>
+      </div>
+    </template>
+
+    <button class="btn w-full">Simpan template</button>
+  </div>
+</form>
 </x-panel>

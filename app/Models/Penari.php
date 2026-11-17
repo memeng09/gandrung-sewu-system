@@ -16,4 +16,15 @@ class Penari extends Model {
     public function getNomorSertifikatAttribute(): string {
         return sprintf('GS26/%04d/%s', $this->id, $this->created_at->format('Y'));
     }
+        // Mengganti penanda {nama}, {kecamatan}, dst. dengan data penari
+    public function isiTeks(string $teks): string {
+        return strtr($teks, [
+            '{nama}'          => $this->nama,
+            '{kecamatan}'     => $this->kecamatan->nama,
+            '{sanggar}'       => $this->sanggar ?: '-',
+            '{tanggal_lahir}' => $this->tanggal_lahir->locale('id')->translatedFormat('d F Y'),
+            '{nomor}'         => $this->nomor_sertifikat,
+            '{tanggal}'       => now()->locale('id')->translatedFormat('d F Y'),
+        ]);
+    }
 }
