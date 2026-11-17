@@ -11,6 +11,8 @@
 <style>[x-cloak]{display:none!important}</style>
 </head>
 <body class="bg-[#FBF3EA] text-[#2A1A14] antialiased">
+  <x-ornamen class="pointer-events-none fixed -bottom-24 -right-20 -z-10 h-80 w-80 text-[#C9962B]/25" />
+<x-ornamen class="pointer-events-none fixed -left-20 top-40 -z-10 hidden h-64 w-64 text-[#C9962B]/20 lg:block" />
 <header x-data="{open:false}" class="sticky top-0 z-30 border-b border-[#F0E2D0] bg-[#FFFAF4]/95 backdrop-blur">
   <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
     <a href="{{ route('beranda') }}" class="flex items-center gap-2 text-[#8B1E2D]">
