@@ -1,28 +1,35 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SertifikatTemplate extends Model {
-    protected $fillable = ['gambar', 'orientasi', 'elemen', 'nama_y', 'nama_size', 'info_y', 'nomor_y', 'warna'];
+class SertifikatTemplate extends Model
+{
+    protected $fillable = ['gambar', 'orientasi', 'elemen', 'nama_y', 'nama_size', 'info_y', 'nomor_y', 'warna', 'qr_x', 'qr_y', 'qr_size'];
+
     protected $casts = ['elemen' => 'array'];
 
     // Font bawaan PDF + font tambahan dari public/fonts/sertifikat/*.ttf
-    public static function daftarFont(): array {
+    public static function daftarFont(): array
+    {
         return array_merge(['Times', 'Helvetica', 'DejaVu Serif', 'DejaVu Sans'], self::fontCustom());
     }
 
-    public static function fontCustom(): array {
+    public static function fontCustom(): array
+    {
         return collect(glob(public_path('fonts/sertifikat/*.ttf')) ?: [])
             ->map(fn ($p) => pathinfo($p, PATHINFO_FILENAME))->values()->all();
     }
 
-    public function elemenAktif(): array {
+    public function elemenAktif(): array
+    {
         return $this->elemen ?: self::elemenDefault();
     }
 
     // Contoh awal supaya editor tidak kosong. Posisi dalam persen halaman.
-    public static function elemenDefault(): array {
+    public static function elemenDefault(): array
+    {
         $e = fn ($teks, $y, $ukuran, $o = []) => array_merge([
             'teks' => $teks, 'x' => 10, 'y' => $y, 'w' => 80, 'ukuran' => $ukuran, 'font' => 'Times',
             'tebal' => false, 'miring' => false, 'rata' => 'center', 'warna' => '#2A1A14',

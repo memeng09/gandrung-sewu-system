@@ -1,10 +1,14 @@
 <?php
+
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Penari;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\VerifikasiController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'beranda')->name('beranda');
 Route::get('/penari-lolos', [Penari\CardController::class, 'index'])->name('penari.cards');
+Route::get('/verifikasi/{kode}', [VerifikasiController::class, 'show'])->name('verifikasi.sertifikat');
 Route::view('/kontak', 'kontak')->name('kontak');
 Route::view('/tentang', 'tentang')->name('tentang');
 
@@ -24,7 +28,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/penari/{penari}/cabut', [Admin\PenariController::class, 'cabut'])->name('penari.cabut');
         Route::get('/template', [Admin\TemplateController::class, 'edit'])->name('template');
         Route::post('/template', [Admin\TemplateController::class, 'simpan'])->name('template.simpan');
-                Route::get('/kode', [Admin\KodeController::class, 'index'])->name('kode');
+        Route::get('/kode', [Admin\KodeController::class, 'index'])->name('kode');
         Route::post('/kode/{kode}/cabut', [Admin\KodeController::class, 'cabut'])->name('kode.cabut-satu');
         Route::post('/kode/{kode}/aktifkan', [Admin\KodeController::class, 'aktifkan'])->name('kode.aktifkan');
 
@@ -43,9 +47,9 @@ Route::middleware('auth')->group(function () {
     });
 
     // Route profil bawaan Breeze
-    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

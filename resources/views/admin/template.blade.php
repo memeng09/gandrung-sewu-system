@@ -6,6 +6,9 @@
     'elemen'    => $tpl->elemenAktif(),
     'src'       => $tpl->gambar ? asset('storage/' . $tpl->gambar) : '',
     'fonts'     => \App\Models\SertifikatTemplate::daftarFont(),
+    'qrX'       => old('qr_x', $tpl->qr_x ?? 78),
+    'qrY'       => old('qr_y', $tpl->qr_y ?? 86),
+    'qrSize'    => old('qr_size', $tpl->qr_size ?? 12),
   ];
 @endphp
 <style>
@@ -17,6 +20,7 @@
 function editorSertifikat(d) {
   return {
     orientasi: d.orientasi, elemen: d.elemen, src: d.src, fonts: d.fonts, pilih: 0, drag: null,
+    qrX: d.qrX, qrY: d.qrY, qrSize: d.qrSize,
     chips: ['{nama}', '{kecamatan}', '{sanggar}', '{tanggal_lahir}', '{nomor}', '{tanggal}'],
     get W() { return this.orientasi === 'landscape' ? 841.89 : 595.28; },
     get el() { return this.elemen[this.pilih]; },
@@ -77,8 +81,10 @@ function editorSertifikat(d) {
                          fontFamily: fontCss(e.font), fontWeight: e.tebal ? 700 : 400, fontStyle: e.miring ? 'italic' : 'normal',
                          textAlign: e.rata, color: e.warna, lineHeight: 1.25, whiteSpace: 'pre-line' }"
                @pointerdown="mulai($event, i)" @pointermove="geser($event)" @pointerup="lepas()" x-text="contoh(e.teks)"></div>
-        </template>
-      </div>
+         </template>
+         <div class="pointer-events-none absolute flex items-center justify-center rounded border border-dashed border-[#8B1E2D] bg-[#8B1E2D]/5 text-[9px] font-bold text-[#8B1E2D]"
+              :style="{ left: qrX + '%', top: qrY + '%', width: qrSize + '%', aspectRatio: '1/1' }">QR</div>
+       </div>
     </div>
     <p class="mt-2 text-xs text-[#6B5A50]">Pratinjau memakai data contoh. Klik kotak teks untuk memilih, geser untuk memindahkan.</p>
   </div>
@@ -91,6 +97,17 @@ function editorSertifikat(d) {
       <div><label class="lbl" for="orientasi">Orientasi kertas A4</label>
         <select id="orientasi" name="orientasi" x-model="orientasi" class="inp">
           <option value="landscape">Landscape (melebar)</option><option value="portrait">Portrait (tegak)</option></select></div>
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="lbl" for="qr_x">QR X (%)</label>
+          <input id="qr_x" type="number" name="qr_x" min="0" max="100" step="0.5" x-model.number="qrX"
+                 value="{{ old('qr_x', $tpl->qr_x ?? 78) }}" class="inp" required></div>
+        <div><label class="lbl" for="qr_y">QR Y (%)</label>
+          <input id="qr_y" type="number" name="qr_y" min="0" max="100" step="0.5" x-model.number="qrY"
+                 value="{{ old('qr_y', $tpl->qr_y ?? 86) }}" class="inp" required></div>
+        <div><label class="lbl" for="qr_size">Ukuran QR (%)</label>
+          <input id="qr_size" type="number" name="qr_size" min="1" max="100" step="0.5" x-model.number="qrSize"
+                 value="{{ old('qr_size', $tpl->qr_size ?? 12) }}" class="inp" required></div>
+      </div>
     </div>
 
     <div class="box space-y-3">
