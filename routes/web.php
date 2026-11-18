@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'beranda')->name('beranda');
 Route::get('/penari-lolos', [Penari\CardController::class, 'index'])->name('penari.cards');
 Route::get('/verifikasi/{kode}', [VerifikasiController::class, 'show'])->name('verifikasi.sertifikat');
+Route::view('/kontak', 'kontak')->name('kontak');
+Route::view('/tentang', 'tentang')->name('tentang');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', fn () => redirect()->route(auth()->user()->isAdmin() ? 'admin.dashboard' : 'penari.dashboard'))->name('dashboard');
