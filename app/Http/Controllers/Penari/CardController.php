@@ -13,7 +13,7 @@ class CardController extends Controller {
         if ($r->filled('q')) $q->where('nama', 'like', '%' . $r->q . '%');
         if ($r->filled('kecamatan')) $q->where('kecamatan_id', $r->kecamatan);
         return view('penari.cards', [
-            'penari' => $q->paginate(12, ['id', 'nama', 'foto', 'kecamatan_id'])->withQueryString(),
+           'penari' => $q->paginate(12, ['id', 'nama', 'foto', 'kecamatan_id', 'sanggar'])->withQueryString(),
             'kecamatan' => Kecamatan::orderBy('nama')->get(['id', 'nama']),
         ]);
     }

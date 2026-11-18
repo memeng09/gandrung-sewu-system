@@ -24,6 +24,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/penari/{penari}/cabut', [Admin\PenariController::class, 'cabut'])->name('penari.cabut');
         Route::get('/template', [Admin\TemplateController::class, 'edit'])->name('template');
         Route::post('/template', [Admin\TemplateController::class, 'simpan'])->name('template.simpan');
+                Route::get('/kode', [Admin\KodeController::class, 'index'])->name('kode');
+        Route::post('/kode/{kode}/cabut', [Admin\KodeController::class, 'cabut'])->name('kode.cabut-satu');
+        Route::post('/kode/{kode}/aktifkan', [Admin\KodeController::class, 'aktifkan'])->name('kode.aktifkan');
+
+        Route::get('/penari-export/excel', [Admin\PenariController::class, 'excel'])->name('penari.excel');
+        Route::get('/penari-export/pdf', [Admin\PenariController::class, 'pdf'])->name('penari.pdf');
+        Route::get('/penari/{penari}/edit', [Admin\PenariController::class, 'edit'])->name('penari.edit');
+        Route::put('/penari/{penari}', [Admin\PenariController::class, 'update'])->name('penari.update');
     });
 
     Route::middleware('role:penari')->prefix('penari')->name('penari.')->group(function () {
