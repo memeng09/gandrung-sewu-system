@@ -20,8 +20,12 @@
 function editorSertifikat(d) {
   return {
     orientasi: d.orientasi, elemen: d.elemen, src: d.src, fonts: d.fonts, pilih: 0, drag: null,
+
     qrX: d.qrX, qrY: d.qrY, qrSize: d.qrSize,
     chips: ['{nama}', '{kecamatan}', '{sanggar}', '{tanggal_lahir}', '{nomor}', '{tanggal}'],
+
+        chips: ['{NAMA}', '{nama}', '{SEKOLAH}', '{ASAL}', '{DESA}', '{SANGGAR}', '{KECAMATAN}', '{nomor}', '{tanggal_lahir}', '{tanggal}'],
+
     get W() { return this.orientasi === 'landscape' ? 841.89 : 595.28; },
     get el() { return this.elemen[this.pilih]; },
     klem(v, a, b) { return Math.round(Math.min(b, Math.max(a, v)) * 10) / 10; },
@@ -57,9 +61,10 @@ function editorSertifikat(d) {
     },
     contoh(t) {
       return (t || '').replaceAll('{nama}', 'Ayu Lestari').replaceAll('{kecamatan}', 'Kabat').replaceAll('{sanggar}', 'Sanggar Sritanjung')
-        .replaceAll('{tanggal_lahir}', '14 Maret 2008').replaceAll('{nomor}', 'GS26/0001/2026')
-        .replaceAll('{tanggal}', new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }));
-    },
+                .replaceAll('{SEKOLAH}', 'SMPN 2 CLURING').replaceAll('{sekolah}', 'SMPN 2 Cluring')
+        .replaceAll('{ASAL}', 'SMPN 2 CLURING').replaceAll('{asal}', 'SMPN 2 Cluring')
+        .replaceAll('{DESA}', 'REJOSARI').replaceAll('{desa}', 'Rejosari')
+        .replaceAll('{SANGGAR}', 'SANGGAR TARI GANDRUNG ARUM').replaceAll('{sanggar}', 'Sanggar Tari Gandrung Arum')
   };
 }
 </script>

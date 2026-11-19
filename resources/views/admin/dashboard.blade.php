@@ -1,13 +1,16 @@
 <x-panel title="Dashboard Admin" sub="Selamat datang! Berikut ringkasan data terbaru.">
-  @php $pct = fn ($a, $b) => $b ? min(100, round($a / $b * 100)) : 0; @endphp
+  @php
+    $pct = fn ($a, $b) => $b ? min(100, round($a / $b * 100)) : 0;
+    $jl = ['sekolah' => 'Sekolah', 'desa' => 'Desa', 'umum' => 'Umum'];
+  @endphp
 
   <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-    <div class="rounded-2xl bg-[#8B1E2D] p-4 text-white sm:p-5">
-      <div class="flex items-center gap-2 text-sm"><x-icon n="users"/>Kuota terisi</div>
-      <div class="judul mt-2 text-3xl font-bold">{{ number_format($stat['kuota']) }}</div>
-      <div class="text-xs text-[#F6E7D4]">dari target {{ number_format($stat['target']) }}</div>
+    <div class="col-span-2 rounded-2xl bg-[#8B1E2D] p-4 text-white sm:p-5">
+      <div class="flex items-center gap-2 text-sm"><x-icon n="key"/>Kode dibuat dari target</div>
+      <div class="judul mt-2 text-3xl font-bold">{{ number_format($stat['dibuat']) }} <span class="text-lg font-normal">/ {{ number_format($stat['target']) }}</span></div>
+      <div class="mt-2 h-2 rounded bg-white/25"><div class="h-2 rounded bg-[#F1CF8A]" style="width:{{ $pct($stat['dibuat'], $stat['target']) }}%"></div></div>
+      <div class="mt-1 text-xs text-[#F6E7D4]">{{ $stat['dibuat'] <= $stat['target'] ? 'Sisa ' . number_format($stat['target'] - $stat['dibuat']) . ' kode untuk dibagi setelah seleksi' : 'Melebihi target ' . number_format($stat['dibuat'] - $stat['target']) }}</div>
     </div>
-    <div class="box"><div class="flex items-center gap-2 text-sm text-[#6B5A50]"><x-icon n="key"/>Kode dibuat</div><div class="judul mt-2 text-3xl font-bold">{{ number_format($stat['dibuat']) }}</div></div>
     <div class="box"><div class="flex items-center gap-2 text-sm text-[#6B5A50]"><x-icon n="edit"/>Kode terpakai</div><div class="judul mt-2 text-3xl font-bold">{{ number_format($stat['terpakai']) }}</div></div>
     <div class="box"><div class="flex items-center gap-2 text-sm text-[#6B5A50]"><x-icon n="check"/>Terverifikasi</div><div class="judul mt-2 text-3xl font-bold">{{ number_format($stat['aktif']) }}</div></div>
   </div>
@@ -40,25 +43,32 @@
       <ul class="mt-3 space-y-3">
         @forelse ($terbaru as $p)
           <li class="flex items-start gap-3 text-sm"><img src="{{ asset('storage/' . $p->foto) }}" alt="" class="h-11 w-9 rounded object-cover">
-            <div><div class="font-semibold">{{ $p->nama }} mendaftar</div><div class="text-xs text-[#6B5A50]">{{ $p->kecamatan->nama }} &middot; {{ $p->created_at->format('d M Y, H:i') }}</div></div></li>
+            <div><div class="font-semibold">{{ $p->nama }} mendaftar</div><div class="text-xs text-[#6B5A50]">{{ $p->label_jalur }} &middot; {{ $p->wilayah }} &middot; {{ $p->created_at->format('d M, H:i') }}</div></div></li>
         @empty <li class="text-sm text-[#6B5A50]">Belum ada pendaftaran.</li>
         @endforelse
       </ul>
     </div>
   </div>
 
-  <form method="post" action="{{ route('admin.kode.generate-semua') }}" class="box flex flex-wrap items-center justify-between gap-3">@csrf
-    <div class="text-sm">Buat kode untuk semua kecamatan yang kuotanya belum terpenuhi.</div><button class="btn">Generate semua kode</button>
-  </form>
-
   <div class="box">
-    <h2 class="judul mb-3 text-lg font-bold">Rekap per kecamatan</h2>
-    <div class="overflow-x-auto"><table class="w-full min-w-[560px]">
-      <tr><th class="th">Kecamatan</th><th class="th">Kuota</th><th class="th">Kode dibuat</th><th class="th w-1/3">Terpakai</th></tr>
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <h2 class="judul text-lg font-bold">Rekap per kecamatan dan jalur</h2>
+      <a href="{{ route('admin.kuota') }}" class="btn btn-s">Atur kuota &amp; kode</a>
+    </div>
+    <p class="mb-3 text-xs text-[#6B5A50]">Angka besar: terpakai / dibuat. Di bawahnya: kuota yang ditetapkan.</p>
+    <div class="overflow-x-auto"><table class="w-full min-w-[620px]">
+      <tr><th class="th">Kecamatan</th>@foreach ($jl as $l)<th class="th">{{ $l }}</th>@endforeach</tr>
       @foreach ($kec as $k)
-      <tr><td class="td">{{ $k->nama }} <span class="text-xs text-[#6B5A50]">{{ $k->kode_singkat }}</span></td><td class="td">{{ $k->kuota }}</td><td class="td">{{ $k->kode_dibuat }}</td>
-        <td class="td"><div class="flex items-center gap-2"><div class="h-2 flex-1 rounded bg-[#F0E2D0]"><div class="h-2 rounded bg-[#C9962B]" style="width:{{ $pct($k->kode_dipakai, $k->kuota) }}%"></div></div><span class="text-xs">{{ $k->kode_dipakai }}/{{ $k->kuota }}</span></div></td></tr>
+        <tr><td class="td">{{ $k->nama }} <span class="text-xs text-[#6B5A50]">{{ $k->kode_singkat }}</span></td>
+          @foreach ($jl as $j => $l)
+            @php $key = $k->id . '|' . $j; $kd = $kode[$key] ?? null; $kq = $kuota[$key]->kuota ?? null; @endphp
+            <td class="td"><div class="font-semibold">{{ (int) ($kd->dipakai ?? 0) }} / {{ (int) ($kd->dibuat ?? 0) }}</div>
+              <div class="text-xs text-[#6B5A50]">{{ $kq !== null ? 'kuota ' . $kq : 'kuota belum pasti' }}</div></td>
+          @endforeach
+        </tr>
       @endforeach
+      <tr class="bg-[#F0E2D0]/40"><td class="td font-semibold">Luar Banyuwangi</td>
+        <td class="td" colspan="3"><span class="font-semibold">{{ (int) ($luar->dipakai ?? 0) }} / {{ (int) ($luar->dibuat ?? 0) }}</span> <span class="text-xs text-[#6B5A50]">(tanpa kuota tetap, mengikuti pilihan juri)</span></td></tr>
     </table></div>
   </div>
 </x-panel>

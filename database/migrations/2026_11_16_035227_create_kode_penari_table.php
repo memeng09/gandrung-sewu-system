@@ -7,8 +7,11 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('kode_penari', function (Blueprint $t) {
             $t->id();
-            $t->foreignId('kecamatan_id')->constrained('kecamatan');
+            $t->enum('jalur', ['sekolah', 'desa', 'umum', 'luar']);
+            $t->foreignId('kecamatan_id')->nullable()->constrained('kecamatan');
+            $t->foreignId('kelompok_luar_id')->nullable()->constrained('kelompok_luar');
             $t->string('kode')->unique();
+            $t->string('nama_penerima')->nullable();   // opsional: kode dikunci ke nama tertentu
             $t->enum('status', ['belum_dipakai', 'dipakai', 'dicabut'])->default('belum_dipakai');
             $t->foreignId('dipakai_oleh')->nullable()->constrained('users');
             $t->timestamp('dipakai_pada')->nullable();
