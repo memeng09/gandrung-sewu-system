@@ -12,7 +12,7 @@ class KecamatanSeeder extends Seeder {
             'Songgon'=>'SGG','Glagah'=>'GLG','Licin'=>'LCN','Banyuwangi'=>'BWI','Giri'=>'GIR','Kalipuro'=>'KLP',
             'Wongsorejo'=>'WSR','Blimbingsari'=>'BLB'];
         foreach ($data as $nama => $kode) {
-            Kecamatan::firstOrCreate(['nama' => $nama], ['kode_singkat' => $kode, 'kuota' => 0]);
+            Kecamatan::firstOrCreate(['nama' => $nama], ['kode_singkat' => $kode]);
         }
     }
 }

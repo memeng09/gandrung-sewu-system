@@ -12,11 +12,13 @@ tr{page-break-inside:avoid}
 <h1>Data Penari Gandrung Sewu</h1>
 <div class="ket">{{ $filter }} &middot; {{ number_format($penari->count()) }} penari &middot; dicetak {{ now()->locale('id')->translatedFormat('d F Y, H:i') }}</div>
 <table>
-<thead><tr><th>No</th><th>Nama</th><th>Kecamatan</th><th>Kode</th><th>Tgl lahir</th><th>Alamat</th><th>WhatsApp</th><th>Sanggar</th><th>Status</th></tr></thead>
+<thead><tr><th>No</th><th>Nama</th><th>Jalur</th><th>Asal</th><th>Sekolah / instansi</th><th>Sanggar</th><th>Kode</th><th>Tgl lahir</th><th>WhatsApp</th><th>Status</th></tr></thead>
 <tbody>
 @foreach ($penari as $i => $p)
-<tr><td>{{ $i + 1 }}</td><td>{{ $p->nama }}</td><td>{{ $p->kecamatan->nama }}</td><td>{{ $p->kode->kode }}</td>
-<td>{{ $p->tanggal_lahir->format('d/m/Y') }}</td><td>{{ $p->alamat }}</td><td>{{ $p->no_wa }}</td><td>{{ $p->sanggar }}</td><td>{{ $status[$p->status] }}</td></tr>
+<tr><td>{{ $i + 1 }}</td><td>{{ $p->nama }}</td><td>{{ $p->label_jalur }}</td>
+<td>{{ $p->jalur === 'desa' ? 'Desa ' . $p->desa . ', ' : '' }}{{ $p->wilayah }}</td>
+<td>{{ $p->sekolah ?: $p->instansi }}{{ $p->kelas ? ' (kelas ' . $p->kelas . ')' : '' }}</td><td>{{ $p->sanggar }}</td>
+<td>{{ $p->kode->kode }}</td><td>{{ $p->tanggal_lahir->format('d/m/Y') }}</td><td>{{ $p->no_wa }}</td><td>{{ $status[$p->status] }}</td></tr>
 @endforeach
 </tbody></table>
 </body></html>

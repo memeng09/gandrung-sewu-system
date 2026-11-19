@@ -1,26 +1,18 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Kecamatan;
 use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
-{
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
-    public function run(): void
-    {
-        $this->call(KecamatanSeeder::class);
-
-        // Akun admin. GANTI password ini setelah login pertama.
-        User::firstOrCreate(
-            ['email' => 'admin@gandrung.test'],
-            ['name' => 'Admin Gandrung Sewu', 'password' => 'password', 'role' => 'admin']
-        );
+class KecamatanSeeder extends Seeder {
+    public function run(): void {
+        $data = ['Pesanggaran'=>'PSG','Siliragung'=>'SLG','Bangorejo'=>'BGR','Purwoharjo'=>'PWH','Tegaldlimo'=>'TGD',
+            'Muncar'=>'MCR','Cluring'=>'CLR','Gambiran'=>'GBR','Tegalsari'=>'TGS','Glenmore'=>'GLM','Kalibaru'=>'KLB',
+            'Genteng'=>'GTG','Srono'=>'SRN','Rogojampi'=>'RGJ','Kabat'=>'KBT','Singojuruh'=>'SGJ','Sempu'=>'SMP',
+            'Songgon'=>'SGG','Glagah'=>'GLG','Licin'=>'LCN','Banyuwangi'=>'BWI','Giri'=>'GIR','Kalipuro'=>'KLP',
+            'Wongsorejo'=>'WSR','Blimbingsari'=>'BLB'];
+        foreach ($data as $nama => $kode) {
+            Kecamatan::firstOrCreate(['nama' => $nama], ['kode_singkat' => $kode]);
+        }
     }
 }

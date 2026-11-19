@@ -26,12 +26,13 @@
   <div class="box space-y-3">
     @if (!$penari)
       <h2 class="font-semibold">Kamu belum mengisi data diri</h2>
-      <p class="text-sm text-[#6B5A50]">Siapkan kartu kode dari juri dan pas foto 3x4, lalu lengkapi data dirimu.</p>
-      <a href="{{ route('penari.form') }}" class="btn">Isi data diri</a>
+      <p class="text-sm text-[#6B5A50]">Siapkan kartu kode dari juri dan pas foto 3x4, lalu mulai pendaftaran.</p>
+      <a href="{{ route('penari.form') }}" class="btn">Mulai pendaftaran</a>
     @else
       <div class="flex items-center gap-4">
         <img src="{{ asset('storage/' . $penari->foto) }}" alt="Foto {{ $penari->nama }}" class="h-24 w-[72px] rounded-xl object-cover">
-        <div><div class="text-lg font-bold">{{ $penari->nama }}</div><div class="text-sm text-[#6B5A50]">Kecamatan {{ $penari->kecamatan->nama }}</div>
+        <div><div class="text-lg font-bold">{{ $penari->nama }}</div>
+          <div class="text-sm text-[#6B5A50]">Jalur {{ $penari->label_jalur }} &middot; {{ $penari->asal }}</div>
           <div class="mt-2"><x-badge :status="$penari->status" /></div></div>
       </div>
       @if ($penari->status === 'aktif')
