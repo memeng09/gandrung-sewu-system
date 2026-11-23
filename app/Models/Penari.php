@@ -1,10 +1,14 @@
 <?php
+
 namespace App\Models;
 
+use App\Services\KodeVerifikasiGenerator;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
 
-class Penari extends Model {
+class Penari extends Model
+{
     public const PROVINSI = ['Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Kepulauan Riau', 'Jambi', 'Sumatera Selatan',
         'Kepulauan Bangka Belitung', 'Bengkulu', 'Lampung', 'DKI Jakarta', 'Jawa Barat', 'Banten', 'Jawa Tengah', 'DI Yogyakarta',
         'Jawa Timur', 'Bali', 'Nusa Tenggara Barat', 'Nusa Tenggara Timur', 'Kalimantan Barat', 'Kalimantan Tengah',
@@ -13,8 +17,10 @@ class Penari extends Model {
         'Papua Barat Daya', 'Papua Selatan', 'Papua Tengah', 'Papua Pegunungan'];
 
     protected $table = 'penari';
+
     protected $fillable = ['user_id', 'kode_penari_id', 'jalur', 'kecamatan_id', 'desa', 'provinsi', 'kota', 'nama',
         'tanggal_lahir', 'alamat', 'no_wa', 'sekolah', 'kelas', 'instansi', 'sanggar', 'foto', 'status', 'catatan'];
+
     protected $casts = ['tanggal_lahir' => 'date'];
 
     public function user() { return $this->belongsTo(User::class); }
@@ -22,10 +28,11 @@ class Penari extends Model {
     public function kode() { return $this->belongsTo(KodePenari::class, 'kode_penari_id'); }
 
     // Aturan isian khusus tiap jalur (dipakai form pendaftaran dan form edit admin)
-    public static function aturanJalur(string $jalur): array {
+    public static function aturanJalur(string $jalur): array
+    {
         return match ($jalur) {
             'sekolah' => ['sekolah' => 'required|string|max:100', 'kelas' => 'required|string|max:20'],
-             'desa'    => ['desa' => ['required', 'string', 'max:100', "regex:/^[\\pL][\\pL\\s.'-]*$/u"],
+            'desa'    => ['desa' => ['required', 'string', 'max:100', "regex:/^[\\pL][\\pL\\s.'-]*$/u"],
                           'sekolah' => 'nullable|string|max:100',
                           'kelas' => 'nullable|required_with:sekolah|string|max:20'],
             'umum'    => ['instansi' => 'nullable|string|max:100'],
@@ -33,22 +40,31 @@ class Penari extends Model {
                           'instansi' => 'nullable|string|max:100'],
         };
     }
-        // Nama desa selalu diseragamkan: tanpa awalan "Desa/Kelurahan", spasi rapi, huruf besar di awal tiap kata
-    public function setDesaAttribute($value): void {
+
+    // Nama desa selalu diseragamkan: tanpa awalan "Desa/Kelurahan", spasi rapi, huruf besar di awal tiap kata
+    public function setDesaAttribute($value): void
+    {
         $v = trim(preg_replace('/\s+/u', ' ', (string) $value));
         $v = preg_replace('/^(desa|ds\.?|kelurahan|kel\.?)\s+/iu', '', $v);
         $this->attributes['desa'] = $v === '' ? null : mb_convert_case($v, MB_CASE_TITLE, 'UTF-8');
     }
 
-    public function getLabelJalurAttribute(): string { return KodePenari::JALUR[$this->jalur]['label']; }
+    public function getLabelJalurAttribute(): string
+    {
+        return KodePenari::JALUR[$this->jalur]['label'];
+    }
 
     // Kecamatan, atau "Kota, Provinsi" untuk peserta luar Banyuwangi
-    public function getWilayahAttribute(): string {
-        return $this->jalur === 'luar' ? trim($this->kota . ', ' . $this->provinsi, ', ') : ($this->kecamatan?->nama ?? '-');
+    public function getWilayahAttribute(): string
+    {
+        return $this->jalur === 'luar'
+            ? trim($this->kota . ', ' . $this->provinsi, ', ')
+            : ($this->kecamatan?->nama ?? '-');
     }
 
     // Teks asal untuk kartu dan sertifikat
-    public function getAsalAttribute(): string {
+    public function getAsalAttribute(): string
+    {
         return match ($this->jalur) {
             'sekolah' => $this->sekolah ?: $this->wilayah,
             'desa'    => 'Desa ' . $this->desa . ', Kec. ' . $this->wilayah,
@@ -58,22 +74,84 @@ class Penari extends Model {
     }
 
     // Nomor mengikuti format yang diatur admin di Template Sertifikat
-    public function getNomorSertifikatAttribute(): string {
+    public function getNomorSertifikatAttribute(): string
+    {
         $format = SertifikatTemplate::first()?->format_nomor ?: 'GS26/{urut}/{tahun}';
+
         return strtr($format, ['{urut}' => sprintf('%04d', $this->id), '{tahun}' => $this->created_at->format('Y')]);
     }
 
     // Token QR: id + tanda tangan rahasia, tidak bisa ditebak
-    public function getTokenVerifikasiAttribute(): string {
+    public function getTokenVerifikasiAttribute(): string
+    {
         return $this->id . '-' . substr(hash_hmac('sha256', (string) $this->id, config('app.key')), 0, 12);
     }
 
+    // Buat kode verifikasi unik kalau penari belum punya (dari kode teman)
+    public function pastikanKodeVerifikasi(): string
+    {
+        if ($this->kode_verifikasi) {
+            return $this->kode_verifikasi;
+        }
+
+        $generator = app(KodeVerifikasiGenerator::class);
+
+        for ($percobaan = 0; $percobaan < 5; $percobaan++) {
+            $kode = $generator->generate();
+
+            try {
+                $terubah = static::whereKey($this->id)
+                    ->whereNull('kode_verifikasi')
+                    ->update(['kode_verifikasi' => $kode]);
+            } catch (QueryException $e) {
+                if (! $this->adalahBentrokKodeUnik($e)) {
+                    throw $e;
+                }
+
+                $tersimpan = $this->fresh()?->kode_verifikasi;
+                if ($tersimpan) {
+                    return $this->kode_verifikasi = $tersimpan;
+                }
+
+                continue;
+            }
+
+            if ($terubah === 1) {
+                return $this->kode_verifikasi = $kode;
+            }
+
+            $tersimpan = $this->fresh()?->kode_verifikasi;
+            if ($tersimpan) {
+                return $this->kode_verifikasi = $tersimpan;
+            }
+        }
+
+        throw new \RuntimeException('Gagal membuat kode verifikasi unik.');
+    }
+
+    private function adalahBentrokKodeUnik(QueryException $e): bool
+    {
+        $sqlState = (string) $e->getCode();
+
+        if ($sqlState === '23505') {
+            return true;
+        }
+
+        if ($sqlState !== '23000') {
+            return false;
+        }
+
+        return preg_match('/(UNIQUE constraint failed|Duplicate entry|duplicate key)/i', $e->getMessage()) === 1;
+    }
+
     // Penanda huruf kecil = apa adanya, HURUF BESAR = dikapitalkan
-    public function isiTeks(string $teks): string {
+    public function isiTeks(string $teks): string
+    {
         $sekolah = $this->sekolah ?: ($this->instansi ?: '-');
         $sanggar = $this->sanggar ?: '-';
         $desa = $this->desa ?: '-';
         $up = fn ($s) => mb_strtoupper($s);
+
         return strtr($teks, [
             '{nama}' => $this->nama, '{NAMA}' => $up($this->nama),
             '{kecamatan}' => $this->wilayah, '{KECAMATAN}' => $up($this->wilayah),
@@ -88,10 +166,12 @@ class Penari extends Model {
     }
 
     // Untuk PDF: **tebal**, __miring__, dan baris baru
-    public function teksPdf(string $teks): string {
+    public function teksPdf(string $teks): string
+    {
         $h = e($this->isiTeks($teks));
         $h = preg_replace('/\*\*(.+?)\*\*/su', '<b>$1</b>', $h);
         $h = preg_replace('/__(.+?)__/su', '<i>$1</i>', $h);
+
         return nl2br($h);
     }
 }
