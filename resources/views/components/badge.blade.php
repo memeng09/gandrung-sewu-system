@@ -1,6 +1,10 @@
 @props(['status'])
 @php
-$map = ['aktif' => ['Terverifikasi', 'bg-green-100 text-green-900'], 'perlu_ditinjau' => ['Perlu ditinjau', 'bg-amber-100 text-amber-900'], 'dicabut' => ['Dicabut', 'bg-red-100 text-red-900']];
-[$label, $cls] = $map[$status] ?? [$status, 'bg-gray-100 text-gray-900'];
+$map = [
+  'aktif'          => ['Terverifikasi', 'bg-green-50 text-green-800 ring-green-200', 'bg-green-500'],
+  'perlu_ditinjau' => ['Perlu ditinjau', 'bg-amber-50 text-amber-800 ring-amber-200', 'bg-amber-500'],
+  'dicabut'        => ['Dicabut', 'bg-red-50 text-red-800 ring-red-200', 'bg-red-500'],
+];
+[$label, $cls, $dot] = $map[$status] ?? [$status, 'bg-gray-50 text-gray-800 ring-gray-200', 'bg-gray-400'];
 @endphp
-<span class="inline-block whitespace-nowrap rounded-md px-3 py-1 text-xs font-semibold {{ $cls }}">{{ $label }}</span>
+<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 {{ $cls }}"><span class="h-1.5 w-1.5 rounded-full {{ $dot }}"></span>{{ $label }}</span>
