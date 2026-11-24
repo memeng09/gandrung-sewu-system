@@ -1,17 +1,19 @@
 <x-panel title="Edit Data Penari" sub="Koreksi data yang salah ketik. Sertifikat memakai data terbaru.">
   <a href="{{ route('admin.penari') }}" class="text-sm font-semibold text-[#8B1E2D]">&larr; Kembali ke daftar</a>
 
-  @if (session('sandi_baru'))
-    <div class="rounded-2xl bg-amber-100 p-4 text-sm text-amber-900" x-data="{salin:false}">
-      <p>Password sementara untuk <b>{{ $penari->nama }}</b> (hanya tampil sekali, catat sekarang):</p>
-      <div class="mt-2 flex flex-wrap items-center gap-3">
+   @if (session('sandi_baru'))
+    <div class="rounded-2xl bg-amber-50 p-5 ring-1 ring-amber-200" x-data="{salin:false}">
+      <p class="text-sm text-amber-900">Password sementara untuk <b>{{ $penari->nama }}</b> (hanya tampil sekali, catat atau kirim sekarang):</p>
+      <div class="mt-3 flex flex-wrap items-center gap-3">
         <code class="rounded-lg bg-white px-4 py-2 text-lg font-bold tracking-widest">{{ session('sandi_baru') }}</code>
-        <button type="button" class="btn-o btn-s" @click="navigator.clipboard.writeText('{{ session('sandi_baru') }}'); salin = true" x-text="salin ? 'Tersalin' : 'Salin'"></button>
+        @if (session('sandi_wa'))<a href="{{ session('sandi_wa') }}" target="_blank" rel="noopener" class="btn">Kirim lewat WhatsApp</a>@endif
+        <button type="button" class="btn-o" @click="navigator.clipboard.writeText(@js(session('sandi_baru'))); salin = true" x-text="salin ? 'Tersalin' : 'Salin password'"></button>
       </div>
-      <p class="mt-2 text-xs">Kirim ke penari lewat WhatsApp dan minta dia menggantinya di Pengaturan Akun.</p>
+      <p class="mt-2 text-xs text-amber-900">
+        @if (session('sandi_wa'))Pesan sudah terisi otomatis, tinggal tekan kirim di WhatsApp.@else Penari ini belum mengisi nomor WhatsApp. Kirim password lewat cara lain.@endif
+      </p>
     </div>
   @endif
-
   <div class="grid gap-5 lg:grid-cols-[260px_1fr]">
     <div class="box space-y-3">
       <img src="{{ asset('storage/' . $penari->foto) }}" alt="Foto {{ $penari->nama }}" class="aspect-[3/4] w-full rounded-xl object-cover">

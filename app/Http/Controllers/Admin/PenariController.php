@@ -22,8 +22,10 @@ class PenariController extends Controller {
         if ($r->filled('jalur')) $q->where('jalur', $r->jalur);
         if ($r->filled('kecamatan')) $q->where('kecamatan_id', $r->kecamatan);
         if ($t = $r->q) {
-            $q->where(fn ($w) => $w->where('nama', 'like', "%$t%")->orWhere('desa', 'like', "%$t%")->orWhere('sekolah', 'like', "%$t%")
-                ->orWhereHas('kode', fn ($x) => $x->where('kode', 'like', "%$t%")));
+            $q->where(fn ($w) => $w->where('nama', 'like', "%$t%")->orWhere('desa', 'like', "%$t%")
+                ->orWhere('sekolah', 'like', "%$t%")->orWhere('no_wa', 'like', "%$t%")
+                ->orWhereHas('kode', fn ($x) => $x->where('kode', 'like', "%$t%"))
+                ->orWhereHas('user', fn ($x) => $x->where('email', 'like', "%$t%")));
         }
         return $q;
     }
@@ -85,18 +87,29 @@ class PenariController extends Controller {
         return back()->with('ok', "{$penari->nama} dicabut. Kodenya ikut dicabut; buat kode pengganti bila perlu.");
     }
 
-    // Password sementara 8 karakter, tampil sekali di layar
+    // Password sementara 8 karakter, tampil sekali di layar, lengkap dengan link WhatsApp siap kirim
     public function resetPassword(Penari $penari) {
         $huruf = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
         $sandi = '';
         for ($i = 0; $i < 8; $i++) $sandi .= $huruf[random_int(0, strlen($huruf) - 1)];
 
         $user = $penari->user;
-        $user->password = $sandi;
-        $user->setRememberToken(Str::random(60));
+        $user->password = $sandi;                       // di-hash otomatis oleh model
+        $user->setRememberToken(Str::random(60));       // sesi "ingat saya" lama tidak berlaku
         $user->save();
 
-        return back()->with('sandi_baru', $sandi);
+        return back()->with('sandi_baru', $sandi)->with('sandi_wa', $this->linkWa($penari, $sandi));
+    }
+
+    private function linkWa(Penari $penari, string $sandi): ?string {
+        $n = preg_replace('/\D+/', '', (string) $penari->no_wa);
+        if ($n === '') return null;
+        if (str_starts_with($n, '0')) $n = '62' . substr($n, 1);
+        elseif (str_starts_with($n, '8')) $n = '62' . $n;
+
+        $pesan = "Halo {$penari->nama}, ini password sementara akun Gandrung Sewu kamu: {$sandi}\n\n"
+               . "Silakan masuk lalu ganti di menu Pengaturan Akun. Jangan bagikan password ini ke siapa pun.";
+        return 'https://wa.me/' . $n . '?text=' . rawurlencode($pesan);
     }
 
     // ---------- Ekspor Excel (CSV, langsung terbuka di Excel) ----------
