@@ -50,12 +50,14 @@ class FormController extends Controller {
         $kodeAkun = $this->kodeAkun();
         if (!$kodeAkun) return redirect()->route('penari.form')->withErrors(['kode' => 'Masukkan kode terlebih dahulu.']);
 
-        $d = $r->validate(array_merge([
+               $d = $r->validate(array_merge([
             'nama' => 'required|string|max:100', 'tanggal_lahir' => 'required|date|before:today',
-            'alamat' => 'required|string|max:300', 'no_wa' => 'nullable|string|max:20', 'sanggar' => 'nullable|string|max:100',
+            'alamat' => 'required|string|max:300', 'no_wa' => 'required|string|min:9|max:20',
+            'sanggar' => 'nullable|string|max:100',
             'foto' => 'required|image|mimes:jpg,jpeg,png|max:10240',
         ], Penari::aturanJalur($kodeAkun->jalur)), [
             'desa.regex' => 'Nama desa hanya boleh berisi huruf, tanpa angka atau simbol.',
+            'no_wa.required' => 'Nomor WhatsApp wajib diisi.',
         ]);
 
         DB::transaction(function () use ($d, $r, $kodeAkun) {

@@ -1,7 +1,7 @@
 <x-panel title="Manajemen Penari" sub="Penari dengan kode sah otomatis terverifikasi. Admin menangani pengecualian dan koreksi data.">
   @php $jalurLabel = collect(\App\Models\KodePenari::JALUR)->map(fn ($j) => $j['label']); @endphp
   <form method="get" class="flex flex-col gap-2 lg:flex-row">
-    <input class="inp lg:max-w-xs" name="q" value="{{ request('q') }}" placeholder="Cari nama, desa, sekolah, atau kode">
+    <input class="inp lg:max-w-xs" name="q" value="{{ request('q') }}" placeholder="Cari nama, email, WhatsApp, desa, atau kode">
     <select class="inp lg:max-w-[180px]" name="jalur" onchange="this.form.submit()"><option value="">Semua jalur</option>
       @foreach ($jalurLabel as $j => $l)<option value="{{ $j }}" @selected(request('jalur') === $j)>{{ $l }}</option>@endforeach</select>
     <select class="inp lg:max-w-[190px]" name="kecamatan" onchange="this.form.submit()"><option value="">Semua kecamatan</option>

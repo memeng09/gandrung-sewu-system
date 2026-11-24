@@ -13,7 +13,7 @@
   <form method="post" action="{{ route('penari.simpan') }}" enctype="multipart/form-data" x-data="{foto:''}" class="box grid gap-4 sm:grid-cols-2">@csrf
     <div><label class="lbl" for="nama">Nama lengkap</label><input id="nama" name="nama" value="{{ old('nama') }}" class="inp" required autocomplete="name"></div>
     <div><label class="lbl" for="tgl">Tanggal lahir</label><input id="tgl" type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" class="inp" required></div>
-    <div><label class="lbl" for="wa">No. WhatsApp</label><input id="wa" name="no_wa" value="{{ old('no_wa') }}" class="inp" inputmode="tel" placeholder="08xx xxxx xxxx"></div>
+       <div><label class="lbl" for="wa">No. WhatsApp</label><input id="wa" name="no_wa" value="{{ old('no_wa') }}" class="inp" inputmode="tel" required placeholder="08xx xxxx xxxx"></div>
     <div><label class="lbl" for="sanggar">Sanggar tari (opsional)</label><input id="sanggar" name="sanggar" value="{{ old('sanggar') }}" class="inp"></div>
 
     @if ($kode->jalur === 'sekolah')

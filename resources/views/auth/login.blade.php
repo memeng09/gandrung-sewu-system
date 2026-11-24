@@ -29,7 +29,11 @@
 
     <div class="flex items-center justify-between gap-3 text-sm">
       <label class="flex items-center gap-2"><input type="checkbox" name="remember" class="rounded border-[#CDBFA6] text-[#8B1E2D] focus:ring-[#8B1E2D]"> Ingat saya</label>
-      @if (Route::has('password.request'))<a href="{{ route('password.request') }}" class="font-semibold text-[#8B1E2D] hover:underline">Lupa password?</a>@endif
+           @php $waPanitia = config('gandrung.wa_panitia'); @endphp
+      @if ($waPanitia)
+        <a href="https://wa.me/{{ $waPanitia }}?text={{ rawurlencode("Halo panitia Gandrung Sewu, saya lupa password akun penari.\nNama lengkap: \nEmail akun: ") }}"
+           target="_blank" rel="noopener" class="font-semibold text-[#8B1E2D] hover:underline">Lupa password?</a>
+      @endif
     </div>
 
     <button class="btn w-full" :disabled="kirim"><span x-text="kirim ? 'Memproses...' : 'Masuk'">Masuk</span></button>
